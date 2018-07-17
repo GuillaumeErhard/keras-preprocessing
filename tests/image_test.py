@@ -593,13 +593,19 @@ class TestImage(object):
 
     def test_load_img(self, tmpdir):
         filename = str(tmpdir / 'image.png')
-
+        filename_16bits = str(tmpdir / 'image.tif')
+        
         original_im_array = np.array(255 * np.random.rand(100, 100, 3),
                                      dtype=np.uint8)
         original_im = image.array_to_img(original_im_array, scale=False)
         original_im.save(filename)
+        
+        original_im_array_16bits = np.array(65535 * np.random.rand(100, 100, 1),
+                                     dtype=np.uint16)
+        original_im_16bits = image.array_to_img(original_im_array, scale=False)
+        original_im_16bits.save(filename_16bits)
 
-        # Test that loaded image is exactly equal to original.
+        # Test that loaded 8 bits image is exactly equal to original.
 
         loaded_im = image.load_img(filename)
         loaded_im_array = image.img_to_array(loaded_im)
@@ -610,7 +616,14 @@ class TestImage(object):
         loaded_im_array = image.img_to_array(loaded_im)
         assert loaded_im_array.shape == (original_im_array.shape[0],
                                          original_im_array.shape[1], 1)
+        
+        # Test that loaded 16bits image is exactly equal to original.
 
+        loaded_im = image.load_img(filename_16bits)
+        loaded_im_array = image.img_to_array(loaded_im, colormode='grayscale')
+        assert loaded_im_array.shape == original_im_array_16bits.shape
+        assert np.all(loaded_im_array == original_im_array_16bits)
+        
         # Test that nothing is changed when target size is equal to original.
 
         loaded_im = image.load_img(filename, target_size=(100, 100))
@@ -642,6 +655,7 @@ class TestImage(object):
         loaded_im_array_nearest = image.img_to_array(loaded_im_nearest)
         assert loaded_im_array_nearest.shape == (25, 25, 3)
         assert np.any(loaded_im_array_nearest != loaded_im_array)
+        
 
         # Check that exception is raised if interpolation not supported.
 
